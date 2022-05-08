@@ -1,0 +1,194 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Analyzer : MonoBehaviour
+{
+    [Header("References")]
+    [SerializeField] private Library library;
+
+    [Header("Table Values")]
+    public int nameCount = 0;
+    public int letterCount = 0;
+    public List<LengthOccurenceData> lengthOccurenceTable;
+    public List<LetterOccurenceData> letterOccurenceTable;
+    
+
+
+
+    private void Awake()
+    {
+        //nextLetterLookupTable = new int[25,25];
+        LetterOccurenceTableInitializer();
+    }
+
+    private void Update()
+    {
+        if(Input.GetKeyDown(KeyCode.F12))
+        {
+            RunAnalyzer();
+        }
+
+    }
+
+    private void RunAnalyzer()
+    {
+        //Analyze each words
+        foreach (var item in library.nameList)
+        {
+            LengthOccurenceAnalyzer(item);
+            NextLetterAnalyzer(item);
+
+
+            //Analyze each letter in a word
+            foreach (char c in item)
+            {
+                LetterOccurenceAnalyzer(c);
+            }
+        }
+
+        LengthOccurencePercentageCounter();
+        LetterOccurencePercentageCounter();
+    }
+
+    #region Length Occurence Table
+    /// <summary>
+    /// Tally up the length of every names in the list
+    /// </summary>
+    /// <param name="item"></param>
+    private void LengthOccurenceAnalyzer(string item)
+    {
+        nameCount++;
+
+        //Get the length of the item on the list
+        int length = item.Length;
+
+        //If the index for that length already exists
+        if (lengthOccurenceTable.Count > length)
+        {
+            lengthOccurenceTable[length].count += 1;
+        }
+        else
+        {
+            //Otherwise, add new values in the list until we reached that length
+            int currentLoopValue = lengthOccurenceTable.Count;
+            do
+            {
+                lengthOccurenceTable.Add(new LengthOccurenceData(0, 0));
+                currentLoopValue++;
+            }
+            while (currentLoopValue < length);
+
+            lengthOccurenceTable.Add(new LengthOccurenceData(1, 0));
+        }
+    }
+
+    /// <summary>
+    /// Count the percentage of every length occurence in the list
+    /// </summary>
+    private void LengthOccurencePercentageCounter()
+    {
+        int nameListCount = library.nameList.Count;
+        for (int i = 0; i < lengthOccurenceTable.Count; i++)
+        {
+            lengthOccurenceTable[i].percentage = (float)lengthOccurenceTable[i].count / nameListCount;
+        }
+    }
+    #endregion
+
+    #region Letter Occurence Table
+    /// <summary>
+    /// This function initialize all letter value in the table
+    /// </summary>
+    private void LetterOccurenceTableInitializer()
+    {
+        //Initialize all letters in the table
+        for (int i = 65; i <= 90; i++)
+        {
+            letterOccurenceTable.Add(new LetterOccurenceData(System.Convert.ToChar(i), 0, 0));
+        }
+    }
+    private void LetterOccurenceAnalyzer(char item)
+    {
+        //Lowercase ascii code: 65-90
+        //Uppercase ascii code: 97-122
+
+        int asciiCode = System.Convert.ToInt32(item);
+
+        //For lowercase:
+        if (asciiCode <= 90 && asciiCode >= 65)
+        {
+            letterOccurenceTable[asciiCode - 65].count++;
+        }
+        else if (asciiCode <= 122 && asciiCode >= 97)
+        {
+            letterOccurenceTable[asciiCode - 97].count++;
+        }
+        else return;
+
+        letterCount++;
+    }
+
+    private void LetterOccurencePercentageCounter()
+    {
+        for (int i = 0; i < letterOccurenceTable.Count; i++)
+        {
+            letterOccurenceTable[i].percentage = (float)letterOccurenceTable[i].count / letterCount;
+        }
+    }
+    #endregion
+
+    #region Next Letter Lookup Table
+    private void NextLetterAnalyzer(string item)
+    {
+        int previousLetterAscii = 0;
+        for (int i = 0; i < item.Length; i++)
+        {
+            int asciiCode = System.Convert.ToInt32(item[i]);
+
+            if(i > 0)
+            {
+                //Put the letter into the table
+                //nextLetterLookupTable[previousLetterAscii - 97, asciiCode]++;
+            }
+
+            previousLetterAscii = asciiCode;
+        }
+    }
+    #endregion
+}
+
+[System.Serializable]
+public class LengthOccurenceData
+{
+    public int count;           //How many times this length has appeared in the list
+    public float percentage;    //After being counted, what is the percentage of this data to the rest of the data?
+
+    public LengthOccurenceData(int _count, float _percentage)
+    {
+        count = _count;
+        percentage = _percentage;
+    }
+}
+
+[System.Serializable]
+public class LetterOccurenceData
+{
+    public char letter;           //How many times this length has appeared in the list
+    public int count;
+    public float percentage;
+
+    public LetterOccurenceData(char _letter, int _count, float _percentage)
+    {
+        letter = _letter;
+        count = _count;
+        percentage = _percentage;
+    }
+}
+
+[System.Serializable]
+public class NextLetterLookupTable
+{
+    public int[,] nextLetterLookupCount;
+    public float[,] percetageTable;
+}
